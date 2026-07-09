@@ -1,4 +1,8 @@
 const functions = require('@google-cloud/functions-framework');
+// 1. FIX: Import and initialize the Pub/Sub library
+const { PubSub } = require('@google-cloud/pubsub');
+const pubsub = new PubSub();
+
 
 // Register an HTTP function named "fast-ingress-function"
 functions.http('fast-ingress-function', async (req, res) => {
@@ -22,20 +26,28 @@ functions.http('fast-ingress-function', async (req, res) => {
       return res.status(200).send('Ok'); 
   }
 
-    // // 1. Decode and parse the Pub/Sub payload
-    // const base64Data = cloudEvent.data.message.data;
-    // const payloadString = Buffer.from(base64Data, 'base64').toString();
-    // const { body, originIp, path } = JSON.parse(payloadString);
 
-    // // 2. Execute external API tasks in parallel to save time
-    // const newRelicTask = logToNewRelic(body, originIp, path);
-    // //const vpsTask = logToGcpVps(body);
+  try {
+    // 2. Prepare payload for Pub/Sub (including IP/path metadata for logging later)
+    const messageData = {
+        body: req.body,
+        originIp: req.ip,
+        path: req.path
+    };
+    
+    const dataBuffer = Buffer.from(JSON.stringify(messageData));
+    console.log(`Sending petition pub/sub async`);
+    // 3. Publish to Pub/Sub queue asynchronously
+    await pubsub.topic(process.env.TOPIC_NAME).publishMessage({ data: dataBuffer });
 
-    // // Run both tasks simultaneously
-    // await Promise.allSettled([newRelicTask]);//, vpsTask]);
+  } catch (error) {
+    console.error(`Failed to push to Pub/Sub: ${error.message}`);
+  } finally {
+    
+    console.log('=========== End Fast Ingress ===========');
+    // Still send 200 to protect client relationship if infrastructure hits a hiccup
+    res.status(200).send('Ok'); 
+  }
 
-  console.log('=========== End Fast Ingress ===========');
-
-
-  res.status(200).send('Hello, World! prod fast ingress function');
+  
 });
