@@ -23,7 +23,7 @@ functions.http('fast-ingress-function', async (req, res) => {
 
   if (!isAllowed) {
       console.log(`IP Whitelist Filter IP BLOCKED: ${req.ip} body:${JSON.stringify(req.body)}`);
-      return res.status(200).send('Ok'); 
+      return res.status(200).send('Ok');
   }
 
 
@@ -34,20 +34,20 @@ functions.http('fast-ingress-function', async (req, res) => {
         originIp: req.ip,
         path: req.path
     };
-    
+
     const dataBuffer = Buffer.from(JSON.stringify(messageData));
-    console.log(`Sending petition pub/sub async`);
+    console.log(`Sending petition pub/sub async` + req.body);
     // 3. Publish to Pub/Sub queue asynchronously
     await pubsub.topic(process.env.TOPIC_NAME).publishMessage({ data: dataBuffer });
 
   } catch (error) {
     console.error(`Failed to push to Pub/Sub: ${error.message}`);
   } finally {
-    
+
     console.log('=========== End Fast Ingress ===========');
     // Still send 200 to protect client relationship if infrastructure hits a hiccup
-    res.status(200).send('Ok'); 
+    res.status(200).send('Ok');
   }
 
-  
+
 });
