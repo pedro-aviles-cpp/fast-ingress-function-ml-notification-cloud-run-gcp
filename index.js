@@ -36,7 +36,8 @@ functions.http('fast-ingress-function', async (req, res) => {
     };
 
     const dataBuffer = Buffer.from(JSON.stringify(messageData));
-    console.log(`Sending petition pub/sub async` + req.body);
+    console.log(`Sending petition pub/sub async`);
+    console.log(JSON.stringify(req.body));
     // 3. Publish to Pub/Sub queue asynchronously
     await pubsub.topic(process.env.TOPIC_NAME).publishMessage({ data: dataBuffer });
 
